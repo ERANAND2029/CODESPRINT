@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Snap2Solve (गाजियाबाद)
+> **"Snap it. Report it. Fix it."**  
+> *Automated Civic Grievance Protocol with a 7-Day Statutory Escalation Clock.*  
+> Built for the Civic Tech Hackathon by **Team Tech Astra, ABES Engineering College**.  
+> Repository: [github.com/pannapurna041-hash/Snap2Solve_Codesprint](https://github.com/pannapurna041-hash/Snap2Solve_Codesprint)
 
-## Getting Started
+---
 
-First, run the development server:
+## 🏛️ The Problem & Our Solution
+In Indian municipalities (such as Nagar Nigam Ghaziabad), civic grievances—potholes, overflowing garbage dumps, broken streetlights, and sewer waterlogging—linger for weeks because complaints filed on generic portals lack statutory enforceability and citizen co-verification.
 
+**Snap2Solve** transforms an ordinary smartphone snapshot into a legally-binding administrative grievance:
+1. **Snap**: Citizen takes a geo-tagged photograph of the issue.
+2. **AI Classification**: Vision model identifies the category (Garbage, Pothole, Lighting, Waterlogging) and maps it to governing civic bylaws (e.g. *Solid Waste Management Rules 2016, UP Municipal Corporation Act 1959*).
+3. **Formal Statutory Notice**: Generates an official, bilingual (English & Hindi) municipal letter addressed to the exact Zonal Officer and Ward Engineer.
+4. **7-Day Escalation Clock**: Automatically starts an uncompromising 7-day countdown. If the ward team fails to remediate the defect within 7 days, the ticket escalates directly to the Municipal Commissioner and queues a Section 6(1) RTI inquiry.
+5. **Open Public Registry**: Logged on an interactive open map where neighbors can co-sign and verify before/after fixes.
+
+---
+
+## 🎨 Visual Identity & Design Principles
+- **Aesthetic**: Municipal-notice board crossed with Indian Railways transit signage. Confident, plain, slightly gritty, high contrast.
+- **Palette**:
+  - Background warm grey `#E0DCD9` with subtle paper grain
+  - Surface white `#FFFFFF`
+  - Ink black `#141414`
+  - Primary red accent `#E31E2D` (used sparingly)
+  - Dark panel charcoal `#2B2F36`
+  - Status indicators: Resolved `#2F7D4F`, Pending `#C98A00`, Escalated `#E31E2D`
+- **Typography**: Archivo (tight, bold, condensed headers), Roboto (body), Noto Sans Devanagari (Hindi support), JetBrains Mono (complaint IDs & stamps).
+- **Stamps**: Monospace badge tilted at -2.5° for statuses like `ESCALATED TO JE`, `RECEIVED · 7-DAY CLOCK STARTED`, `DAY 4 OF 7`.
+- **Mobile-first**: Designed at 390px viewport width, seamlessly scaling to desktop.
+
+---
+
+## 🗺️ Routes & Features
+- `/` – **Home Screen**: Live municipal audit counter (reported, fixed, escalated), primary "Photo kheencho / Snap a photo" action, transit-line "How it works" timeline, live mini-map preview, recent verified complaints feed.
+- `/report` – **3-Step Report Flow**:
+  - *Step 1: Capture*: Camera/file upload with live preview, 4 one-click hackathon test presets, GPS auto-capture, AI scanning simulation with category override.
+  - *Step 2: Draft*: Paper-textured official notice letter with live English/Hindi translation toggle, editable remarks, WhatsApp (`wa.me`) and Email (`mailto`) dispatch buttons.
+  - *Step 3: Done*: Animated stamp impact, permanent complaint ID (e.g. `S2S-GZB-004217`), 7-day target countdown bar.
+- `/map` – **Public Interactive Map**: Fullscreen Leaflet + OpenStreetMap (no API key required), category filter chips, status filter, locality quick jump, and bottom drawer / side panel showing photos and citizen co-signers.
+- `/c/[id]` – **Complaint Dossier**: Geotagged evidence photo, vertical 14-day escalation timeline (Day 0 → Day 3 → Day 7 → Day 14 RTI), formal letterhead, and **"Before / After Check"** community audit voting.
+- `/wards` – **Ward Report Card**: Public municipal leaderboard ranking 8 Ghaziabad wards with grades (A+ to F), solve rates, and average days to fix.
+- `/open` – **Open Data & Extensibility**: JSON schema specification for adding new cities via Pull Request, MIT License details, raw audit dataset download.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- npm
+
+### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/pannapurna041-hash/Snap2Solve_Codesprint.git
+cd Snap2Solve_Codesprint
+
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔌 Architecture & Backend Pluggability
+All data operations are encapsulated in `/lib/api.ts` behind typed functions:
+- `getReports(filter)`
+- `getReportById(id)`
+- `getWardStats()`
+- `submitReport(input)`
+- `detectIssueFromImage(file)`
+- `confirmReportFix(id, stillBroken)`
 
-## Learn More
+This layer simulates realistic 600–1200ms network delay. To connect the live FastAPI backend, simply replace the internal functions in `/lib/api.ts` with your API endpoints—no UI components require modification.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 👥 Authors
+- **Team Tech Astra** · ABES Engineering College, Ghaziabad
+- Open source under the **MIT License**.
