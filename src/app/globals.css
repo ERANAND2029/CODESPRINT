@@ -1,26 +1,129 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-warm: #E0DCD9;
+    --surface-white: #FFFFFF;
+    --ink-black: #141414;
+    --brand-red: #E31E2D;
+    --charcoal: #2B2F36;
+    --muted-ink: #5C5C5C;
+    --hairline: #CFCAC6;
+    --border-dark: #141414;
+    
+    --status-resolved: #2F7D4F;
+    --status-pending: #C98A00;
+    --status-escalated: #E31E2D;
+  }
+
+  body {
+    background-color: var(--bg-warm);
+    color: var(--ink-black);
+    font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+
+  /* Municipal paper texture subtle backdrop */
+  .paper-grain {
+    background-color: #E0DCD9;
+    background-image: radial-gradient(#C4BEB9 0.75px, transparent 0.75px), radial-gradient(#C4BEB9 0.75px, #E0DCD9 0.75px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Stamped status badge */
+.stamp-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-family: var(--font-mono), monospace;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 2px;
+  transform: rotate(-2.5deg);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  white-space: nowrap;
+}
+
+.stamp-badge-escalated {
+  border-color: #E31E2D;
+  color: #E31E2D;
+  background-color: rgba(227, 30, 45, 0.06);
+}
+
+.stamp-badge-pending {
+  border-color: #C98A00;
+  color: #946400;
+  background-color: rgba(201, 138, 0, 0.08);
+}
+
+.stamp-badge-resolved {
+  border-color: #2F7D4F;
+  color: #2F7D4F;
+  background-color: rgba(47, 125, 79, 0.08);
+}
+
+.stamp-badge-neutral {
+  border-color: #2B2F36;
+  color: #2B2F36;
+  background-color: rgba(43, 47, 54, 0.06);
+}
+
+/* Official Municipal Letter styles */
+.municipal-letter {
+  background: #FFFFFF;
+  border: 1px solid #141414;
+  box-shadow: 2px 3px 0 #141414;
+}
+
+/* Transit line styling */
+.transit-line {
+  position: relative;
+}
+.transit-line::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #141414;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+/* Tabular figures */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #E0DCD9;
+}
+::-webkit-scrollbar-thumb {
+  background: #A8A29E;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #78716C;
+}
+
+/* Leaflet container fixes */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background-color: #E0DCD9;
+  font-family: inherit;
 }
