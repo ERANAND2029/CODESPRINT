@@ -69,6 +69,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🚀 Deploy on Render (Step-by-Step)
+1. Go to **[dashboard.render.com](https://dashboard.render.com/)** and click **New +** -> **Web Service**.
+2. Connect your GitHub repository (`TejasviRana-AIML/Hackathon-Project`).
+3. Render will auto-detect `render.yaml`. If configuring manually:
+   - **Environment:** `Node`
+   - **Build Command:** `npm install && npm run build`
+   - **Start Command:** `npm run start`
+   - **Node Version:** `20.18.0` (set in Environment Variables: `NODE_VERSION = 20.18.0`)
+4. Click **Deploy Web Service**. Render will build and deploy the app at `https://snap2solve.onrender.com`.
+
+---
+
 ## 🔌 Architecture & Backend Pluggability
 All data operations are encapsulated in `/lib/api.ts` behind typed functions:
 - `getReports(filter)`
