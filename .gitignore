@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Internal pitch & judge guides
+generate_judges_tech_doc.py
+Snap2Solve_Judges_Tech_Stack_Guide.pdf
+PITCH_SCRIPT.md
+generate_pitch_pdf.py
+Snap2Solve_Pitch_Script.pdf
+REAL_WHATSAPP_BOT_SETUP.md
+
