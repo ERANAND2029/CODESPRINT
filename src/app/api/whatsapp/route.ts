@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitReport } from "@/lib/api";
+import { analyzeImageWithGemini } from "../detect/route";
 
 // Webhook verification endpoint (Meta Cloud API / Twilio)
 export async function GET(req: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ status: "Snap2Solve WhatsApp Webhook Online" });
 }
 
-// Webhook Message Handler
+// Webhook Message Handler (Receives real incoming messages from WhatsApp)
 export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -25,10 +26,10 @@ export async function POST(req: NextRequest) {
     let mediaUrl = "";
     let latitude = 28.6418;
     let longitude = 77.3715;
-    let locationName = "Indirapuram, Ghaziabad";
+    let locationName = "Ghaziabad, Uttar Pradesh";
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
-      // Standard Twilio Webhook format
+      // Standard Twilio WhatsApp Webhook
       const formData = await req.formData();
       messageText = (formData.get("Body") as string) || "";
       mediaUrl = (formData.get("MediaUrl0") as string) || "";
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       if (latStr && lngStr) {
         latitude = parseFloat(latStr);
         longitude = parseFloat(lngStr);
-        locationName = `GPS Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        locationName = `GPS (${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E)`;
       }
     } else {
       // JSON format (Meta Cloud API or direct test payload)
@@ -51,24 +52,42 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Determine category from message or default
-    let category: "garbage" | "pothole" | "streetlight" | "waterlogging" = "garbage";
-    const lower = messageText.toLowerCase();
-    if (lower.includes("pothole") || lower.includes("gaddha") || lower.includes("road")) {
-      category = "pothole";
-    } else if (lower.includes("light") || lower.includes("batti") || lower.includes("dark")) {
-      category = "streetlight";
-    } else if (lower.includes("water") || lower.includes("paani") || lower.includes("drain")) {
-      category = "waterlogging";
+    let detectedCategory: "garbage" | "pothole" | "streetlight" | "waterlogging" = "garbage";
+    let detectedDetails = messageText || "Reported via live WhatsApp Bot";
+    let bylawsCited = "UP Municipal Corporation Act 1959";
+
+    // 1. If real image URL was sent, run real Gemini Vision AI
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey && mediaUrl) {
+      try {
+        const aiAnalysis = await analyzeImageWithGemini(mediaUrl, geminiKey, messageText);
+        if (aiAnalysis && aiAnalysis.category) {
+          detectedCategory = aiAnalysis.category;
+          detectedDetails = aiAnalysis.detailsEn || detectedDetails;
+          bylawsCited = aiAnalysis.detectedBylaws || bylawsCited;
+        }
+      } catch (aiErr: any) {
+        console.warn("Gemini vision analysis failed for WhatsApp image:", aiErr.message);
+      }
+    } else {
+      // Keyword classification fallback
+      const lower = messageText.toLowerCase();
+      if (lower.includes("pothole") || lower.includes("gaddha") || lower.includes("road")) {
+        detectedCategory = "pothole";
+      } else if (lower.includes("light") || lower.includes("batti") || lower.includes("dark")) {
+        detectedCategory = "streetlight";
+      } else if (lower.includes("water") || lower.includes("paani") || lower.includes("drain")) {
+        detectedCategory = "waterlogging";
+      }
     }
 
-    // Auto-register complaint into Snap2Solve registry
+    // 2. Register real complaint in Snap2Solve Public Registry
     const newReport = await submitReport({
-      category,
+      category: detectedCategory,
       locationName,
       lat: latitude,
       lng: longitude,
-      notes: messageText || "Reported via WhatsApp Civic Bot",
+      notes: detectedDetails,
       imageUrl: mediaUrl || "https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&w=700&q=80",
     });
 
@@ -76,7 +95,8 @@ export async function POST(req: NextRequest) {
     const protocol = host.includes("localhost") ? "http" : "https";
     const trackingUrl = `${protocol}://${host}/c/${newReport.id}`;
 
-    const replyMessage = `*🏛️ NAGAR NIGAM GHAZIABAD CIVIC BOT (Snap2Solve)*\n\n✅ *Grievance Successfully Registered!*\n🆔 Complaint ID: *${newReport.id}*\n📍 Location: *${newReport.locationName}*\n⚠️ Category: *${newReport.category.toUpperCase()}*\n\n⏱️ *7-Day Statutory Countdown Started.* Target: ${newReport.escalationDate}\n📨 Official notice served to: *commissioner@nagarnigamghaziabad.in*\n\n🔗 *Track live dossier & community verification:* \n${trackingUrl}`;
+    // 3. Compose real WhatsApp response with complaint ID, legal citation, target date, and map link
+    const replyMessage = `*🏛️ NAGAR NIGAM GHAZIABAD CIVIC BOT (Snap2Solve)*\n\n✅ *Grievance Successfully Registered!*\n🆔 Complaint ID: *${newReport.id}*\n📍 Location: *${newReport.locationName}*\n⚠️ Category: *${newReport.category.toUpperCase()}*\n📜 Bylaw: *${bylawsCited}*\n\n⏱️ *7-Day Statutory Countdown Started.* Target: ${newReport.escalationDate}\n📨 Notice auto-dispatched to: *commissioner@nagarnigamghaziabad.in*\n\n🔗 *Track live dossier & public map:* \n${trackingUrl}`;
 
     // Return Twilio TwiML format if called by Twilio, otherwise JSON
     if (contentType.includes("application/x-www-form-urlencoded")) {

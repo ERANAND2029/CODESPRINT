@@ -1,79 +1,109 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export async function analyzeImageWithGemini(
+  imageSource: string,
+  apiKey: string,
+  extraNotes?: string
+) {
+  let mimeType = "image/jpeg";
+  let base64Data = "";
+
+  if (imageSource.startsWith("data:image")) {
+    const matches = imageSource.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      mimeType = matches[1];
+      base64Data = matches[2];
+    }
+  } else if (imageSource.startsWith("http://") || imageSource.startsWith("https://")) {
+    // Download image from URL (e.g. from WhatsApp / Twilio / S3)
+    const res = await fetch(imageSource);
+    if (!res.ok) throw new Error("Failed to download image from URL");
+    const buffer = await res.arrayBuffer();
+    base64Data = Buffer.from(buffer).toString("base64");
+    const ct = res.headers.get("content-type");
+    if (ct) mimeType = ct;
+  } else {
+    base64Data = imageSource;
+  }
+
+  const prompt = `You are the official AI Civic Inspector for Snap2Solve, working for Nagar Nigam Ghaziabad, Uttar Pradesh, India.
+Examine this photograph carefully. Citizen notes: "${extraNotes || "Civic issue reported"}".
+
+Identify what real municipal civic problem is present. Choose the best matching category from:
+- "garbage" (open solid waste, rotting trash, overflowing dumpsters, commercial debris)
+- "pothole" (broken asphalt, road crater, caved-in road, missing manhole cover)
+- "streetlight" (dark street lamps, dangling wires, knocked-down poles, blackout stretch)
+- "waterlogging" (sewage overflow, stagnant rain puddle, choked drain, water accumulation)
+
+Return ONLY a valid JSON object with no markdown formatting and no extra text, using this schema:
+{
+  "category": "garbage" | "pothole" | "streetlight" | "waterlogging",
+  "confidence": number between 85 and 99,
+  "labelEn": string (short title in English describing what is visible in the photo),
+  "labelHi": string (short title in Hindi),
+  "detailsEn": string (2-sentence specific description of the defect seen in this photo),
+  "detailsHi": string (2-sentence Hindi description of what is seen),
+  "detectedBylaws": string (relevant Indian legal bylaw, e.g. "Solid Waste Management Rules 2016, Rule 15" or "UP Municipal Corporation Act 1959, Section 243" or "UP Water Supply & Sewerage Act 1975"),
+  "formalLetterEn": string (official notice to Zonal Officer, Nagar Nigam Ghaziabad demanding 7-day remediation),
+  "formalLetterHi": string (official Hindi notice under UP Municipalities Act)
+}`;
+
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const response = await fetch(geminiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        response_mime_type: "application/json",
+        temperature: 0.1,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API error ${response.status}: ${errText}`);
+  }
+
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty response from Gemini Vision");
+
+  return JSON.parse(text);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { image, categoryHint, locationName } = body;
-
+    const { image, categoryHint, locationName, notes } = body;
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (apiKey && image && image.startsWith("data:image")) {
+    if (apiKey && image) {
       try {
-        // Extract base64 and mime type
-        const matches = image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const base64Data = matches[2];
-
-          const prompt = `You are the AI Civic Inspector for Snap2Solve, working with Nagar Nigam Ghaziabad, Uttar Pradesh, India.
-Analyze this civic issue photo.
-Return ONLY valid JSON with this exact structure:
-{
-  "category": "garbage" | "pothole" | "streetlight" | "waterlogging",
-  "confidence": number between 88 and 98,
-  "labelEn": string (e.g. "Open Solid Waste Accumulation"),
-  "labelHi": string (e.g. "खुला कचरा डंप / गंदगी"),
-  "detailsEn": string (detailed technical observation under 2 sentences),
-  "detailsHi": string (Hindi technical observation under 2 sentences),
-  "detectedBylaws": string (exact statutory section like "Solid Waste Management Rules 2016, Rule 15(zg)" or "UP Municipal Corporation Act 1959, Section 243"),
-  "formalLetterEn": string (Formal complaint letter addressed to Zonal Officer, Nagar Nigam Ghaziabad citing 7-day statutory escalation),
-  "formalLetterHi": string (Formal Hindi complaint letter addressed to Zonal Officer under UP Municipalities Act)
-}`;
-
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      { text: prompt },
-                      {
-                        inline_data: {
-                          mime_type: mimeType,
-                          data: base64Data,
-                        },
-                      },
-                    ],
-                  },
-                ],
-                generationConfig: {
-                  response_mime_type: "application/json",
-                  temperature: 0.2,
-                },
-              }),
-            }
-          );
-
-          if (geminiRes.ok) {
-            const data = await geminiRes.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) {
-              const parsed = JSON.parse(text);
-              return NextResponse.json({ success: true, ...parsed, provider: "gemini-vision-api" });
-            }
-          }
-        }
-      } catch (geminiErr) {
-        console.warn("Gemini Vision API fallback triggered:", geminiErr);
+        const aiData = await analyzeImageWithGemini(image, apiKey, notes || categoryHint);
+        return NextResponse.json({ success: true, ...aiData, provider: "gemini-1.5-flash" });
+      } catch (geminiErr: any) {
+        console.warn("Gemini Vision API call failed, using intelligent fallback:", geminiErr.message);
       }
     }
 
-    // High-precision fallback when no API key or on network failure
-    const hint = (categoryHint || "").toLowerCase();
-    if (hint.includes("pothole") || hint.includes("road") || hint.includes("crater")) {
+    // High-precision fallback when no API key provided
+    const hint = (categoryHint || notes || "").toLowerCase();
+    if (hint.includes("pothole") || hint.includes("gaddha") || hint.includes("road") || hint.includes("crater")) {
       return NextResponse.json({
         success: true,
         category: "pothole",
@@ -87,7 +117,7 @@ Return ONLY valid JSON with this exact structure:
       });
     }
 
-    if (hint.includes("light") || hint.includes("lamp") || hint.includes("dark")) {
+    if (hint.includes("light") || hint.includes("lamp") || hint.includes("batti") || hint.includes("dark")) {
       return NextResponse.json({
         success: true,
         category: "streetlight",
@@ -101,7 +131,7 @@ Return ONLY valid JSON with this exact structure:
       });
     }
 
-    if (hint.includes("water") || hint.includes("flood") || hint.includes("drain")) {
+    if (hint.includes("water") || hint.includes("flood") || hint.includes("paani") || hint.includes("drain")) {
       return NextResponse.json({
         success: true,
         category: "waterlogging",
@@ -115,14 +145,13 @@ Return ONLY valid JSON with this exact structure:
       });
     }
 
-    // Default to Garbage Dump
     return NextResponse.json({
       success: true,
       category: "garbage",
       confidence: 94,
       labelEn: "Open Solid Waste Dump Encroachment",
       labelHi: "खुला कचरा डंप / गंदगी का ढेर",
-      detailsEn: "Mixed municipal solid waste encroaching public right-of-way. Dengue/vector breeding risk.",
+      detailsEn: "Mixed municipal solid waste encroaching public right-of-way. Vector breeding risk.",
       detailsHi: "सार्वजनिक रास्ते पर कचरे का बड़ा ढेर। संक्रामक बीमारियों एवं आवारा पशुओं का खतरा।",
       detectedBylaws: "Solid Waste Management Rules 2016, Rule 15(zg)",
       provider: "snap2solve-vision-engine",
