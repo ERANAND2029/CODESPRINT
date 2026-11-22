@@ -2,7 +2,7 @@
 > **"Snap it. Report it. Fix it."**  
 > *Automated Civic Grievance Protocol with a 7-Day Statutory Escalation Clock.*  
 > Built for the Civic Tech Hackathon by **Team Tech Astra, ABES Engineering College**.  
-> Repository: [github.com/pannapurna041-hash/Snap2Solve_Codesprint](https://github.com/pannapurna041-hash/Snap2Solve_Codesprint)
+> Repository: [github.com/ERANAND2029/CODESPRINT](https://github.com/ERANAND2029/CODESPRINT)
 
 ---
 
@@ -55,8 +55,8 @@ In Indian municipalities (such as Nagar Nigam Ghaziabad), civic grievances—pot
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/pannapurna041-hash/Snap2Solve_Codesprint.git
-cd Snap2Solve_Codesprint
+git clone https://github.com/ERANAND2029/CODESPRINT.git
+cd CODESPRINT
 
 # Install dependencies
 npm install

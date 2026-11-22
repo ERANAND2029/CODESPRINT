@@ -58,7 +58,7 @@ export default function OpenDataPage() {
         generatedAt: new Date().toISOString(),
         license: "MIT / Open Government Data License",
         maintainer: "Team Tech Astra, ABES Engineering College",
-        repo: "https://github.com/pannapurna041-hash/Snap2Solve_Codesprint",
+        repo: "https://github.com/ERANAND2029/CODESPRINT",
       }, null, 2)
     );
     const downloadAnchor = document.createElement("a");
@@ -97,7 +97,7 @@ export default function OpenDataPage() {
             <GithubIcon className="w-6 h-6 text-[#141414]" />
             <div>
               <h2 className="font-mono text-sm sm:text-base font-black text-[#141414]">
-                pannapurna041-hash/Snap2Solve_Codesprint
+                ERANAND2029/CODESPRINT
               </h2>
               <span className="text-[11px] font-mono text-[#5C5C5C]">
                 Built by Team Tech Astra · ABES Engineering College
@@ -106,7 +106,7 @@ export default function OpenDataPage() {
           </div>
 
           <a
-            href="https://github.com/pannapurna041-hash/Snap2Solve_Codesprint"
+            href="https://github.com/ERANAND2029/CODESPRINT"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#141414] hover:bg-[#2B2F36] text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xs shadow-[2px_2px_0px_#141414] active:translate-y-0.5 transition-transform"
@@ -148,7 +148,7 @@ export default function OpenDataPage() {
 
         <ol className="list-decimal list-inside space-y-2 text-xs sm:text-sm text-[#2B2F36] font-sans leading-relaxed">
           <li>
-            Fork the repository on GitHub: <code className="bg-[#E0DCD9] px-1 py-0.5 rounded-xs font-mono font-bold text-xs">github.com/pannapurna041-hash/Snap2Solve_Codesprint</code>
+            Fork the repository on GitHub: <code className="bg-[#E0DCD9] px-1 py-0.5 rounded-xs font-mono font-bold text-xs">github.com/ERANAND2029/CODESPRINT</code>
           </li>
           <li>
             Create a file under <code className="bg-[#E0DCD9] px-1 py-0.5 rounded-xs font-mono font-bold text-xs">config/cities/your-city.json</code> matching the specification below.

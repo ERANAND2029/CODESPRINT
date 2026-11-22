@@ -13,6 +13,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", labelEn: "Home", labelHi: "होम" },
     { href: "/map", labelEn: "Public Map", labelHi: "मैप" },
+    { href: "/whatsapp", labelEn: "WhatsApp Bot", labelHi: "व्हाट्सएप बॉट" },
     { href: "/wards", labelEn: "Ward Scorecard", labelHi: "वार्ड रिपोर्ट" },
     { href: "/open", labelEn: "Open Data", labelHi: "खुला डेटा" },
   ];

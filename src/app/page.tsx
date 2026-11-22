@@ -100,7 +100,7 @@ export default function HomePage() {
               )}
             </p>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="pt-2 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
               {/* Giant Primary Action Button */}
               <Link
                 href="/report"
@@ -111,6 +111,15 @@ export default function HomePage() {
                   {t("Photo kheencho / Snap a photo", "फोटो खींचो / Snap a photo")}
                 </span>
                 <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+
+              {/* WhatsApp Civic Bot Action */}
+              <Link
+                href="/whatsapp"
+                className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-black font-mono font-black text-xs sm:text-sm uppercase tracking-wider px-4 py-3.5 border-2 border-[#141414] shadow-[2px_2px_0px_#141414] rounded-sm transition-transform active:translate-y-0.5 text-center"
+              >
+                <span className="text-base">💬</span>
+                <span>{t("WhatsApp AI Bot / व्हाट्सएप बॉट", "व्हाट्सएप AI बॉट")}</span>
               </Link>
 
               <Link
@@ -231,7 +240,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/pannapurna041-hash/Snap2Solve_Codesprint"
+              href="https://github.com/ERANAND2029/CODESPRINT"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[#141414] hover:underline font-bold"
