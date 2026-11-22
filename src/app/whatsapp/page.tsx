@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   Mail,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 
 interface ChatMessage {
@@ -79,7 +80,7 @@ export default function WhatsAppBotPage() {
     {
       id: "welcome-1",
       sender: "bot",
-      text: "Namaste! Main Nagar Nigam Ghaziabad ka automated Civic Assistant hoon (Snap2Solve).\n\n📸 Apne aas-paas ke kachre, tooti sadak, ya band streetlight ki photo aur live location bhejiye. Hum turant formal municipal notice draft karke 7-day clock shuru karenge.",
+      text: "🙏 *Namaste! Main Nagar Nigam Ghaziabad ka automated Civic Assistant hoon (Snap2Solve).*\n\n📸 Apne aas-paas ke kachre, tooti sadak, ya band streetlight ki photo aur live location bhejiye.\n\nHum turant AI se issue scan karke official municipal notice draft karenge aur 7-day clock shuru karenge!",
       timestamp: "10:00 AM",
     },
   ]);
@@ -99,7 +100,6 @@ export default function WhatsAppBotPage() {
     const userTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const userMsgId = `user-${Date.now()}`;
 
-    // Add user message with photo + location
     setMessages((prev) => [
       ...prev,
       {
@@ -119,7 +119,7 @@ export default function WhatsAppBotPage() {
     setIsProcessing(true);
 
     try {
-      // 1. Call AI Vision Detection & auto-submit complaint
+      // 1. Submit report
       const report = await submitReport({
         category: preset.category,
         locationName: preset.locationName,
@@ -131,7 +131,6 @@ export default function WhatsAppBotPage() {
 
       const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-      // 2. Bot reply with full drafted notice, legal references, and live link
       setMessages((prev) => [
         ...prev,
         {
@@ -141,7 +140,7 @@ export default function WhatsAppBotPage() {
           category: report.category,
           escalationDate: report.escalationDate,
           emailSent: true,
-          text: `✅ *COMPLAINT REGISTERED VIA CIVIC AI*\n\n🆔 *Ref ID:* ${report.id}\n⚠️ *Detected Category:* ${report.category.toUpperCase()}\n📍 *Location:* ${preset.locationName}\n📜 *Statutory Authority:* Nagar Nigam Ghaziabad (Zone 3 / UP Municipal Act 1959)\n\n⏱️ *7-Day Escalation Clock Started!* Target: ${report.escalationDate}\n📨 *Official notice auto-dispatched to:* commissioner@nagarnigamghaziabad.in\n\nAb ye public map par live dikh raha hai:`,
+          text: `✅ *COMPLAINT REGISTERED VIA CIVIC AI*\n\n🆔 *Ref ID:* ${report.id}\n⚠️ *Detected Category:* ${report.category.toUpperCase()}\n📍 *Location:* ${preset.locationName}\n📜 *Statutory Authority:* Nagar Nigam Ghaziabad (UP Municipal Corporation Act 1959)\n\n⏱️ *7-Day Statutory Countdown Started!* Target: ${report.escalationDate}\n📨 *Official notice auto-dispatched to:* commissioner@nagarnigamghaziabad.in\n\nAb ye public map par live dikh raha hai:`,
           timestamp: botTime,
         },
       ]);
@@ -152,6 +151,7 @@ export default function WhatsAppBotPage() {
     }
   };
 
+  // Real Photo Upload & AI Vision analysis
   const handleRealPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || isProcessing) return;
@@ -166,7 +166,7 @@ export default function WhatsAppBotPage() {
         {
           id: `user-${Date.now()}`,
           sender: "user",
-          text: inputMsg || "Citizen photo uploaded for civic audit.",
+          text: inputMsg || "Live photo captured for civic audit.",
           imageUrl: base64Image,
           location: {
             name: "Live GPS Location (Ghaziabad)",
@@ -191,12 +191,29 @@ export default function WhatsAppBotPage() {
         });
 
         const aiData = await detectRes.json();
+        const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+        // If not a civic defect
+        if (aiData.isCivicIssue === false || aiData.category === "other") {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `bot-${Date.now()}`,
+              sender: "bot",
+              text: `⚠️ *CIVIC ISSUE NOT DETECTED*\n\n${aiData.detailsHi || "Is photo mein koi nagar nigam samasya (jaise khula kachra, sadak ka gaddha, band streetlight ya naali overflow) nahi dikh rahi hai."}\n\nKripya kisi vastavik civic samasya ki photo bhejein taaki hum complaint darj kar sakein.`,
+              timestamp: botTime,
+            },
+          ]);
+          return;
+        }
+
         const detectedCategory = aiData.category || "garbage";
         const detectedBylaws = aiData.detectedBylaws || "UP Municipal Corporation Act 1959";
-        const labelEn = aiData.labelEn || "Civic Defect";
+        const labelEn = aiData.labelEn || "Municipal Defect";
         const detailsEn = aiData.detailsEn || "Identified via AI Vision";
+        const detailsHi = aiData.detailsHi || "";
 
-        // 2. Submit real report into registry
+        // 2. Submit real report into live registry
         const report = await submitReport({
           category: detectedCategory,
           locationName: "Ghaziabad, Uttar Pradesh",
@@ -205,8 +222,6 @@ export default function WhatsAppBotPage() {
           notes: `${labelEn}: ${detailsEn}`,
           imageUrl: base64Image,
         });
-
-        const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
         // 3. Bot replies with real AI analysis and live link
         setMessages((prev) => [
@@ -218,12 +233,22 @@ export default function WhatsAppBotPage() {
             category: report.category,
             escalationDate: report.escalationDate,
             emailSent: true,
-            text: `✅ *REAL-TIME VISION AI ANALYSIS COMPLETE*\n\n🆔 *Ref ID:* ${report.id}\n⚠️ *Detected Issue:* ${labelEn.toUpperCase()} (${aiData.confidence || 95}% confidence)\n📜 *Bylaws Referenced:* ${detectedBylaws}\n📝 *Observation:* ${detailsEn}\n\n⏱️ *7-Day Statutory Clock Started!* Target: ${report.escalationDate}\n📨 Official notice auto-dispatched to: *commissioner@nagarnigamghaziabad.in*\n\nAb ye public map par live dikh raha hai:`,
+            text: `✅ *REAL-TIME VISION AI ANALYSIS COMPLETE*\n\n🆔 *Ref ID:* ${report.id}\n⚠️ *Identified Defect:* ${labelEn.toUpperCase()} (${aiData.confidence || 95}% confidence)\n📜 *Bylaws Referenced:* ${detectedBylaws}\n📝 *AI Observation:* ${detailsEn}\n\n⏱️ *7-Day Statutory Clock Started!* Target: ${report.escalationDate}\n📨 Official notice auto-dispatched to: *commissioner@nagarnigamghaziabad.in*\n\nAb ye public map par live dikh raha hai:`,
             timestamp: botTime,
           },
         ]);
       } catch (err: any) {
-        console.error(err);
+        console.error("AI photo error:", err);
+        const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            sender: "bot",
+            text: "⚠️ Photo process karne mein samasya aayi. Kripya photo dobara bhejein.",
+            timestamp: botTime,
+          },
+        ]);
       } finally {
         setIsProcessing(false);
       }
@@ -231,6 +256,7 @@ export default function WhatsAppBotPage() {
     reader.readAsDataURL(file);
   };
 
+  // Conversational text message handler
   const handleCustomSend = async () => {
     if (!inputMsg.trim() || isProcessing) return;
     const text = inputMsg;
@@ -250,24 +276,13 @@ export default function WhatsAppBotPage() {
     setIsProcessing(true);
 
     try {
-      const lower = text.toLowerCase();
-      let cat: "garbage" | "pothole" | "streetlight" | "waterlogging" = "garbage";
-      if (lower.includes("pothole") || lower.includes("gaddha") || lower.includes("sadak")) {
-        cat = "pothole";
-      } else if (lower.includes("light") || lower.includes("batti") || lower.includes("andhera")) {
-        cat = "streetlight";
-      } else if (lower.includes("water") || lower.includes("paani") || lower.includes("drain")) {
-        cat = "waterlogging";
-      }
-
-      const report = await submitReport({
-        category: cat,
-        locationName: "Indirapuram, Ghaziabad",
-        lat: 28.6418,
-        lng: 77.3715,
-        notes: text,
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
       });
 
+      const data = await res.json();
       const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       setMessages((prev) => [
@@ -275,16 +290,12 @@ export default function WhatsAppBotPage() {
         {
           id: `bot-${Date.now()}`,
           sender: "bot",
-          complaintId: report.id,
-          category: report.category,
-          escalationDate: report.escalationDate,
-          emailSent: true,
-          text: `✅ *GRIEVANCE REGISTERED!*\n🆔 *ID:* ${report.id}\n⚠️ *Category:* ${report.category.toUpperCase()}\n\n⏱️ *7-Day Clock Started!* Target date: ${report.escalationDate}\n📨 Official complaint drafted and emailed to Zonal Officer & Municipal Commissioner.`,
+          text: data.reply || "Namaste! Kripya kisi samasya ki photo camera icon se bhejein.",
           timestamp: botTime,
         },
       ]);
     } catch (err) {
-      console.error(err);
+      console.error("Chat error:", err);
     } finally {
       setIsProcessing(false);
     }
@@ -303,7 +314,7 @@ export default function WhatsAppBotPage() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-[#5C5C5C] hidden sm:inline">INTEGRATION:</span>
+          <span className="font-mono text-xs text-[#5C5C5C] hidden sm:inline">LIVE ASSISTANT:</span>
           <Stamp label="WHATSAPP BOT + VISION AI" variant="escalated" rotation="-rotate-1" />
         </div>
       </div>
@@ -334,12 +345,12 @@ export default function WhatsAppBotPage() {
           </div>
         </div>
 
-        {/* Demo Fast Triggers Strip (Judges / Presentation Friendly) */}
+        {/* Demo Fast Triggers Strip */}
         <div className="bg-[#FAF8F5] border-b border-[#CFCAC6] p-2.5">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#5C5C5C] flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-[#E31E2D]" />
-              TAP TO SIMULATE SENDING CITIZEN SNAP (HACKATHON QUICK DEMO):
+              TAP TO SIMULATE SENDING CITIZEN SNAP (QUICK DEMO):
             </span>
           </div>
 
@@ -450,7 +461,7 @@ export default function WhatsAppBotPage() {
                   <span>AI VISION SCANNING CIVIC ISSUE...</span>
                 </div>
                 <div className="text-[11px] text-[#5C5C5C]">
-                  Mapping municipal bylaws & drafting bilingual notice...
+                  Analyzing defect, checking municipal bylaws & drafting notice...
                 </div>
               </div>
             </div>
@@ -479,7 +490,7 @@ export default function WhatsAppBotPage() {
 
           <input
             type="text"
-            placeholder="Type complaint or location (e.g. Garbage near Shakti Khand market)..."
+            placeholder="Type 'Hi', ask a question, enter Complaint ID, or click Camera to snap..."
             value={inputMsg}
             onChange={(e) => setInputMsg(e.target.value)}
             onKeyDown={(e) => {
